@@ -118,7 +118,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('--attack_time', type=int, default=1, help='minimum attack time in seconds')
-    parser.add_argument('--shells_num', type=int, default=4, help='a number of gshells')
+    parser.add_argument('--shells_num', type=int, default=4, help='number of gshells')
     parser.add_argument('--needles_args', type=str, default='', help='db1000n arguments')
     args = parser.parse_args()
 
