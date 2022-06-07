@@ -114,7 +114,7 @@ def main():
 
     """
     parser = argparse.ArgumentParser(
-        description='attack with needles via gshells',
+        description='auto-attack with needles via gshells in parallel',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('--attack_time', type=int, default=1, help='minimum attack time in seconds')

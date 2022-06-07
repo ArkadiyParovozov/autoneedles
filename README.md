@@ -1,4 +1,4 @@
-### attack with needles via gshells 
+### auto-attack with needles via gshells in parallel
 - https://shell.cloud.google.com
 - https://github.com/Arriven/db1000n
 

