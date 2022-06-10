@@ -20,14 +20,15 @@ def make_domain_ip(url):
     :param url: string containing url
     :return: domain and ip address
     """
+    netloc, ip = None, None
     try:
         netloc = urllib.parse.urlparse(url).netloc
         if netloc:
             ip = socket.gethostbyname(netloc)
-
-            return netloc, ip
     except socket.gaierror:
-        logging.error('url is not known')
+        logging.error('url %s is not known', url)
+
+    return netloc, ip
 
 
 def main():
