@@ -1,5 +1,5 @@
 """
-get ip from url
+gets ip from url
 
 """
 
@@ -70,7 +70,7 @@ def make_country(ip):
 
 def main():
     """
-    get ip from url
+    gets ip from url
 
     """
     parser = argparse.ArgumentParser(
