@@ -74,11 +74,11 @@ def main():
 
     """
     parser = argparse.ArgumentParser(
-        description='get ip from url',
+        description='gets ip from url',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('url', type=str, help='string containing url or path to files with list of of urls')
-    parser.add_argument('--url_column', type=str, default='website', help='column name containing url')
+    parser.add_argument('--url_column', type=str, default='website', help='column name containing urls')
     parser.add_argument('--country', type=bool, default=False, help='adds ip address location')
     args = parser.parse_args()
 
