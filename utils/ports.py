@@ -22,6 +22,7 @@ def tcp_connect(ip, port):
     :param ip: string containing ip address
     :param port: int, port number
     :return: bool, whether port is listen
+
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -43,6 +44,7 @@ def make_ports(ip):
 
     :param ip: string containing ip address
     :return: string containing list of port numbers
+
     """
     ports = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
