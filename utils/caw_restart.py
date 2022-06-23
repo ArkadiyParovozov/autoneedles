@@ -43,6 +43,8 @@ def restart(email, password):
 
     time.sleep(15)
 
+    driver.quit()
+
 
 def main():
     """
