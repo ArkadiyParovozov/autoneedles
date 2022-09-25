@@ -41,7 +41,7 @@ def restart(email, password):
         '//div[@class="options-menu__item tab-focus" and contains(text(),"Restart")]'
     ).click()
 
-    time.sleep(15)
+    time.sleep(60)
 
     driver.quit()
 

